@@ -10,14 +10,20 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import com.submask.app.config.MaskRect
+import com.submask.app.config.OrientationConfig
 import com.submask.app.config.OverlayConfigStore
 import com.submask.app.orientation.OrientationResolver
 import com.submask.app.orientation.ScreenBounds
+import com.submask.app.orientation.ScreenOrientation
 
 class OverlayService : Service() {
     private lateinit var configStore: OverlayConfigStore
     private lateinit var windowController: OverlayWindowController
     private var overlayView: OverlayView? = null
+    private var currentOrientation: ScreenOrientation? = null
+    private var currentRect: MaskRect? = null
+    private var currentLocked: Boolean = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -93,11 +99,44 @@ class OverlayService : Service() {
         val bounds = currentScreenBounds()
         val orientation = OrientationResolver.resolve(bounds)
         val config = configStore.loadOrientationConfig(orientation, bounds)
-        val view = OverlayView(this).apply {
+        currentOrientation = orientation
+        currentRect = config.rect
+        currentLocked = config.locked
+
+        val view = OverlayView(
+            context = this,
+            initialRect = config.rect,
+            initialLocked = config.locked,
+            onRectChanged = { rect ->
+                val clamped = rect.clampTo(
+                    bounds = currentScreenBounds(),
+                    minWidth = OverlayConfigStore.MIN_MASK_WIDTH,
+                    minHeight = OverlayConfigStore.MIN_MASK_HEIGHT
+                )
+                currentRect = clamped
+                overlayView?.setRect(clamped)
+                windowController.update(clamped)
+                saveCurrentConfig()
+            },
+            onLockChanged = { locked ->
+                currentLocked = locked
+                saveCurrentConfig()
+            }
+        ).apply {
             setMaskOpacity(configStore.getOpacity())
         }
+
         overlayView = view
         windowController.show(view, config.rect)
+    }
+
+    private fun saveCurrentConfig() {
+        val orientation = currentOrientation ?: return
+        val rect = currentRect ?: return
+        configStore.saveOrientationConfig(
+            orientation,
+            OrientationConfig(rect = rect, locked = currentLocked, initialized = true)
+        )
     }
 
     private fun currentScreenBounds(): ScreenBounds {
