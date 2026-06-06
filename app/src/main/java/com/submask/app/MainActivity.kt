@@ -1,8 +1,11 @@
 package com.submask.app
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import com.submask.app.config.OverlayConfigStore
@@ -44,6 +47,30 @@ class MainActivity : Activity() {
             return
         }
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATIONS)
+            return
+        }
+
         startForegroundService(Intent(this, OverlayService::class.java))
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_NOTIFICATIONS) {
+            if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
+                startForegroundService(Intent(this, OverlayService::class.java))
+            }
+        }
+    }
+
+    companion object {
+        private const val REQUEST_NOTIFICATIONS = 100
     }
 }
