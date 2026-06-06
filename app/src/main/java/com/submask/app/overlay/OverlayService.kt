@@ -10,9 +10,22 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import com.submask.app.config.OverlayConfigStore
+import com.submask.app.orientation.OrientationResolver
+import com.submask.app.orientation.ScreenBounds
 
 class OverlayService : Service() {
+    private lateinit var configStore: OverlayConfigStore
+    private lateinit var windowController: OverlayWindowController
+    private var overlayView: OverlayView? = null
+
     override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        configStore = OverlayConfigStore(this)
+        windowController = OverlayWindowController(this)
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
@@ -22,7 +35,14 @@ class OverlayService : Service() {
 
         ensureNotificationChannel()
         startAsForeground()
+        showOverlay()
         return START_STICKY
+    }
+
+    override fun onDestroy() {
+        windowController.remove()
+        overlayView = null
+        super.onDestroy()
     }
 
     private fun ensureNotificationChannel() {
@@ -66,6 +86,23 @@ class OverlayService : Service() {
             .setOngoing(true)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "关闭遮挡", stopPendingIntent)
             .build()
+    }
+
+    private fun showOverlay() {
+        if (overlayView != null) return
+        val bounds = currentScreenBounds()
+        val orientation = OrientationResolver.resolve(bounds)
+        val config = configStore.loadOrientationConfig(orientation, bounds)
+        val view = OverlayView(this).apply {
+            setMaskOpacity(configStore.getOpacity())
+        }
+        overlayView = view
+        windowController.show(view, config.rect)
+    }
+
+    private fun currentScreenBounds(): ScreenBounds {
+        val metrics = resources.displayMetrics
+        return ScreenBounds(metrics.widthPixels, metrics.heightPixels)
     }
 
     companion object {
