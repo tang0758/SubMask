@@ -47,7 +47,7 @@ class OverlayView(
         }
         addView(resizeHandle, LayoutParams(56, 56, Gravity.END or Gravity.BOTTOM))
 
-        setLocked(initialLocked)
+        setLocked(initialLocked, notifyChange = false)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -98,11 +98,13 @@ class OverlayView(
         rect = newRect
     }
 
-    private fun setLocked(newLocked: Boolean) {
+    fun setLocked(newLocked: Boolean, notifyChange: Boolean = true) {
         locked = newLocked
         lockButton.text = if (locked) "解" else "锁"
         resizeHandle.visibility = if (locked) GONE else VISIBLE
-        onLockChanged(locked)
+        if (notifyChange) {
+            onLockChanged(locked)
+        }
     }
 
     private enum class TouchMode {

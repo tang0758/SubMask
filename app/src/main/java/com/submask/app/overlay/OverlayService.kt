@@ -8,12 +8,14 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.content.res.Configuration
 import android.os.Build
 import android.os.IBinder
 import com.submask.app.config.MaskRect
 import com.submask.app.config.OrientationConfig
 import com.submask.app.config.OverlayConfigStore
 import com.submask.app.orientation.OrientationResolver
+import com.submask.app.orientation.OrientationStateSelector
 import com.submask.app.orientation.ScreenBounds
 import com.submask.app.orientation.ScreenOrientation
 
@@ -49,6 +51,11 @@ class OverlayService : Service() {
         windowController.remove()
         overlayView = null
         super.onDestroy()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        applyCurrentOrientation()
     }
 
     private fun ensureNotificationChannel() {
@@ -137,6 +144,24 @@ class OverlayService : Service() {
             orientation,
             OrientationConfig(rect = rect, locked = currentLocked, initialized = true)
         )
+    }
+
+    private fun applyCurrentOrientation() {
+        val view = overlayView ?: return
+        val bounds = currentScreenBounds()
+        val newOrientation = OrientationResolver.resolve(bounds)
+        if (newOrientation == currentOrientation) return
+
+        saveCurrentConfig()
+
+        val stored = configStore.loadOrientationConfig(newOrientation, bounds)
+        val selected = OrientationStateSelector.select(newOrientation, bounds, stored)
+        currentOrientation = newOrientation
+        currentRect = selected.rect
+        currentLocked = selected.locked
+        view.setRect(selected.rect)
+        view.setLocked(selected.locked, notifyChange = false)
+        windowController.update(selected.rect)
     }
 
     private fun currentScreenBounds(): ScreenBounds {
