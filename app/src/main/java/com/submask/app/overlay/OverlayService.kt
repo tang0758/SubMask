@@ -128,6 +128,9 @@ class OverlayService : Service() {
             onLockChanged = { locked ->
                 currentLocked = locked
                 saveCurrentConfig()
+            },
+            onCloseRequested = {
+                stopSelf()
             }
         ).apply {
             setMaskOpacity(configStore.getOpacity())

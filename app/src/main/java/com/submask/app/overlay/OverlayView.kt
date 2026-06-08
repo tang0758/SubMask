@@ -20,9 +20,11 @@ class OverlayView(
     initialRect: MaskRect,
     initialLocked: Boolean,
     private val onRectChanged: (MaskRect) -> Unit,
-    private val onLockChanged: (Boolean) -> Unit
+    private val onLockChanged: (Boolean) -> Unit,
+    private val onCloseRequested: () -> Unit
 ) : FrameLayout(context) {
     private val lockButton: ImageView
+    private val closeButton: ImageView
     private val resizeHandle: TextView
     private var rect = initialRect
     private var locked = initialLocked
@@ -42,6 +44,16 @@ class OverlayView(
             }
         }
         addView(lockButton, LayoutParams(56, 56, Gravity.END or Gravity.TOP))
+
+        closeButton = ImageView(context).apply {
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            setBackgroundColor(Color.argb(90, 255, 255, 255))
+            setImageDrawable(CloseDrawable())
+            setOnClickListener {
+                onCloseRequested()
+            }
+        }
+        addView(closeButton, LayoutParams(56, 56, Gravity.START or Gravity.TOP))
 
         resizeHandle = TextView(context).apply {
             text = "↘"
@@ -106,6 +118,7 @@ class OverlayView(
     fun setLocked(newLocked: Boolean, notifyChange: Boolean = true) {
         locked = newLocked
         lockButton.setImageDrawable(LockDrawable(locked))
+        closeButton.visibility = if (locked) GONE else VISIBLE
         resizeHandle.visibility = if (locked) GONE else VISIBLE
         if (notifyChange) {
             onLockChanged(locked)
@@ -178,6 +191,45 @@ class LockDrawable(private val locked: Boolean) : Drawable() {
     override fun setColorFilter(colorFilter: ColorFilter?) {
         paint.colorFilter = colorFilter
         keyholePaint.colorFilter = colorFilter
+    }
+
+    @Deprecated("Deprecated in Java")
+    @Suppress("DEPRECATION")
+    override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+}
+
+class CloseDrawable : Drawable() {
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
+        strokeWidth = 3f
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+    }
+
+    override fun draw(canvas: Canvas) {
+        val bounds = bounds
+        val w = bounds.width().toFloat()
+        val h = bounds.height().toFloat()
+        val cx = w / 2f
+        val cy = h / 2f
+        val size = Math.min(w, h) * 0.4f
+        
+        canvas.save()
+        canvas.translate(cx, cy)
+        canvas.scale(size / 24f, size / 24f)
+        
+        canvas.drawLine(-6f, -6f, 6f, 6f, paint)
+        canvas.drawLine(6f, -6f, -6f, 6f, paint)
+        
+        canvas.restore()
+    }
+
+    override fun setAlpha(alpha: Int) {
+        paint.alpha = alpha
+    }
+
+    override fun setColorFilter(colorFilter: ColorFilter?) {
+        paint.colorFilter = colorFilter
     }
 
     @Deprecated("Deprecated in Java")
