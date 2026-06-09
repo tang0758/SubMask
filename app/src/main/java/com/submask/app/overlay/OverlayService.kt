@@ -17,9 +17,12 @@ import com.submask.app.config.OverlayConfigStore
 import com.submask.app.orientation.OrientationResolver
 import com.submask.app.orientation.OrientationStateSelector
 import com.submask.app.orientation.ScreenBounds
+import android.content.SharedPreferences
+import com.submask.app.config.OverlayConfigKeys
 import com.submask.app.orientation.ScreenOrientation
+import com.submask.app.tile.SubMaskTileService
 
-class OverlayService : Service() {
+class OverlayService : Service(), SharedPreferences.OnSharedPreferenceChangeListener {
     private lateinit var configStore: OverlayConfigStore
     private lateinit var windowController: OverlayWindowController
     private var overlayView: OverlayView? = null
@@ -31,8 +34,11 @@ class OverlayService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        isRunning = true
         configStore = OverlayConfigStore(this)
+        configStore.registerListener(this)
         windowController = OverlayWindowController(this)
+        SubMaskTileService.requestRefresh(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -50,7 +56,16 @@ class OverlayService : Service() {
     override fun onDestroy() {
         windowController.remove()
         overlayView = null
+        isRunning = false
+        configStore.unregisterListener(this)
+        SubMaskTileService.requestRefresh(this)
         super.onDestroy()
+    }
+
+    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
+        if (key == OverlayConfigKeys.opacity) {
+            overlayView?.setMaskOpacity(configStore.getOpacity())
+        }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -176,6 +191,14 @@ class OverlayService : Service() {
         private const val CHANNEL_ID = "submask_overlay"
         private const val NOTIFICATION_ID = 1001
         private const val ACTION_STOP = "com.submask.app.action.STOP"
+
+        @Volatile
+        var isRunning: Boolean = false
+            private set
+
+        fun startIntent(context: Context): Intent {
+            return Intent(context, OverlayService::class.java)
+        }
 
         fun stopIntent(context: Context): Intent {
             return Intent(context, OverlayService::class.java).apply {

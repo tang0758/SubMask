@@ -54,7 +54,7 @@ class MainActivity : Activity() {
             return
         }
 
-        startForegroundService(Intent(this, OverlayService::class.java))
+        startForegroundService(OverlayService.startIntent(this))
     }
 
     override fun onRequestPermissionsResult(
@@ -65,7 +65,7 @@ class MainActivity : Activity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_NOTIFICATIONS) {
             if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
-                startForegroundService(Intent(this, OverlayService::class.java))
+                startForegroundService(OverlayService.startIntent(this))
             }
         }
     }

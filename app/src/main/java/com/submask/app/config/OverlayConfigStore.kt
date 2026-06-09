@@ -36,6 +36,14 @@ class OverlayConfigStore(context: Context) {
             .apply()
     }
 
+    fun registerListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+    }
+
+    fun unregisterListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
+        prefs.unregisterOnSharedPreferenceChangeListener(listener)
+    }
+
     fun loadOrientationConfig(
         orientation: ScreenOrientation,
         bounds: ScreenBounds
