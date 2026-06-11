@@ -11,6 +11,7 @@ import android.provider.Settings
 import com.submask.app.config.OverlayConfigStore
 import com.submask.app.overlay.OverlayService
 import com.submask.app.ui.MainScreen
+import com.submask.app.orientation.ScreenBounds
 
 class MainActivity : Activity() {
     private lateinit var configStore: OverlayConfigStore
@@ -19,14 +20,35 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         configStore = OverlayConfigStore(this)
+        
+        val metrics = resources.displayMetrics
+        val bounds = ScreenBounds(metrics.widthPixels, metrics.heightPixels)
+        
         mainScreen = MainScreen(
             context = this,
-            initialOpacityPercent = (configStore.getOpacity() * 100).toInt(),
-            onOpacityChanged = { percent ->
-                configStore.setOpacity(percent / 100f)
+            configStore = configStore,
+            screenBounds = bounds,
+            onOverlayPermissionClicked = {
+                if (!Settings.canDrawOverlays(this)) {
+                    val intent = Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:$packageName")
+                    )
+                    startActivity(intent)
+                }
+            },
+            onNotificationPermissionClicked = {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATIONS)
+                }
             },
             onStartClicked = {
                 startBlockingOrRequestPermission()
+            },
+            onStopClicked = {
+                stopService(OverlayService.stopIntent(this))
             }
         )
         setContentView(mainScreen)
@@ -34,7 +56,13 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        mainScreen.setPermissionStatus(Settings.canDrawOverlays(this))
+        val hasOverlay = Settings.canDrawOverlays(this)
+        val hasNotification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true
+        }
+        mainScreen.setPermissionStatus(hasOverlay, hasNotification)
     }
 
     private fun startBlockingOrRequestPermission() {
