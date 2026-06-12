@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SubMask Prototype</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="prototype-shell">
+    <section class="stage">
+      <header class="stage-header">
+        <div>
+          <p class="eyebrow">Android 11+ Prototype</p>
+          <h1>SubMask</h1>
+          <p>字幕遮挡器产品原型</p>
+        </div>
+        <div class="device-toggle" role="tablist" aria-label="原型视图">
+          <button class="view-tab is-active" type="button" data-view="home">首页</button>
+          <button class="view-tab" type="button" data-view="overlay">悬浮窗</button>
+          <button class="view-tab" type="button" data-view="tile">磁贴</button>
+        </div>
+      </header>
+
+      <div class="canvas-grid">
+        <article class="phone" aria-label="SubMask 手机原型">
+          <div class="status-bar">
+            <span>9:41</span>
+            <span>5G  86%</span>
+          </div>
+
+          <section class="screen screen-home is-active" data-screen="home">
+            <header class="app-bar">
+              <strong>SubMask</strong>
+              <button class="icon-button" type="button" aria-label="更多菜单" data-action="menu">⋮</button>
+            </header>
+
+            <div class="menu-popover" data-menu hidden>
+              <button type="button">使用帮助</button>
+              <button type="button">关于</button>
+            </div>
+
+            <section class="permission-card">
+              <div class="permission-item">
+                <span class="permission-icon eye-icon">◉</span>
+                <div>
+                  <span>悬浮窗</span>
+                  <strong class="ok">已授权</strong>
+                </div>
+              </div>
+              <div class="permission-divider"></div>
+              <div class="permission-item">
+                <span class="permission-icon bell-icon">●</span>
+                <div>
+                  <span>通知</span>
+                  <strong class="ok">已授权</strong>
+                </div>
+              </div>
+            </section>
+
+            <section class="action-row">
+              <button class="start-action" type="button" data-action="start">▶ 开启遮挡</button>
+              <button class="stop-action" type="button">关闭</button>
+            </section>
+
+            <section class="opacity-card">
+              <div class="card-title-row">
+                <strong>遮挡透明度 <output data-output="opacity">90%</output></strong>
+                <button class="text-action" type="button">重置</button>
+              </div>
+              <input type="range" min="20" max="100" value="90" data-control="opacity">
+              <div class="range-caps">
+                <span>0%</span>
+                <span>100%</span>
+              </div>
+            </section>
+
+            <section class="orientation-row">
+              <div class="segmented" aria-label="方向配置">
+                <button class="segment is-active" type="button" data-orientation="portrait">📱 竖屏</button>
+                <button class="segment" type="button" data-orientation="landscape">▭ 横屏</button>
+              </div>
+              <button class="reset-side" type="button">↻<span>重置</span></button>
+            </section>
+
+            <section class="preview-card">
+              <div class="preview-frame portrait" data-preview>
+                <div class="phone-mock">
+                  <div class="camera-dot"></div>
+                  <div class="scene-sky"></div>
+                  <div class="scene-mountain"></div>
+                  <div class="scene-ground"></div>
+                  <div class="mask-preview" data-mask>
+                    <span class="mask-copy">这是示例字幕内容</span>
+                    <i class="handle left"></i>
+                    <i class="handle center"></i>
+                    <i class="handle right"></i>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="quick-layouts device-card">
+              <h2>快捷布局</h2>
+              <div class="chip-row">
+                <button class="chip" type="button" data-layout="tiktok">TikTok 全屏</button>
+                <button class="chip" type="button" data-layout="youtube">YouTube 半屏</button>
+                <button class="chip" type="button" data-layout="landscape">横屏全屏</button>
+              </div>
+            </section>
+
+            <section class="control-panel device-card">
+              <label class="step-row">
+                <span>宽度</span>
+                <input type="range" min="30" max="100" value="89" data-control="width">
+                <button type="button">-</button>
+                <output data-output="width">89%</output>
+                <button type="button">+</button>
+              </label>
+              <label class="step-row">
+                <span>高度</span>
+                <input type="range" min="4" max="35" value="4" data-control="height">
+                <button type="button">-</button>
+                <output data-output="height">4%</output>
+                <button type="button">+</button>
+              </label>
+              <label class="step-row">
+                <span>底部距离</span>
+                <input type="range" min="0" max="80" value="57" data-control="bottom">
+                <button type="button">-</button>
+                <output data-output="bottom">57%</output>
+                <button type="button">+</button>
+              </label>
+              <label class="step-row">
+                <span>水平位置</span>
+                <input type="range" min="0" max="100" value="50" data-control="x">
+                <strong class="custom-value">自定义⌄</strong>
+              </label>
+            </section>
+          </section>
+
+          <section class="screen screen-overlay" data-screen="overlay">
+            <header class="video-app-bar">
+              <span>TikTok</span>
+              <button type="button" data-action="home">返回 SubMask</button>
+            </header>
+            <div class="video-feed">
+              <div class="caption-line">Original video captions</div>
+              <div class="floating-mask is-unlocked" data-floating-mask>
+                <button class="close-button" type="button" aria-label="关闭">×</button>
+                <button class="lock-button" type="button" data-action="lock">🔓</button>
+                <span class="mask-label">字幕遮挡区域</span>
+                <span class="resize-handle">↘</span>
+              </div>
+              <div class="runtime-panel">
+                <strong>运行中透明度</strong>
+                <input type="range" min="20" max="100" value="72" data-control="runtime-opacity">
+                <span><output data-output="runtime-opacity">72%</output></span>
+              </div>
+            </div>
+          </section>
+
+          <section class="screen screen-tile" data-screen="tile">
+            <header class="quick-settings-header">
+              <span>快捷设置</span>
+              <button type="button" data-action="home">返回首页</button>
+            </header>
+            <div class="tile-grid">
+              <button class="system-tile">Wi-Fi</button>
+              <button class="system-tile">蓝牙</button>
+              <button class="system-tile submask-tile" type="button" data-action="tile">
+                <span>SubMask</span>
+                <small data-tile-state>inactive</small>
+              </button>
+              <button class="system-tile">手电筒</button>
+            </div>
+            <p class="tile-note" data-tile-note>权限完整时，点击磁贴可启动遮挡。</p>
+          </section>
+        </article>
+
+        <aside class="notes-panel">
+          <h2>原型覆盖范围</h2>
+          <ul>
+            <li>首页权限状态、预览、快捷布局和滑块调节。</li>
+            <li>右上菜单仅保留“使用帮助 / 关于”。</li>
+            <li>悬浮窗解锁、锁定和运行中透明度调节。</li>
+            <li>Quick Settings Tile active / inactive 状态。</li>
+          </ul>
+          <h2>当前阶段不表达</h2>
+          <ul>
+            <li>自动字幕识别、OCR、AI 分析。</li>
+            <li>多遮挡条、per-app 配置、内置播放器。</li>
+            <li>账号、云同步、学习统计。</li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
