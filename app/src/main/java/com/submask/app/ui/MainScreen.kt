@@ -37,12 +37,18 @@ class MainScreen(
     private lateinit var activeRect: MaskRect
 
     // UI elements
+    private val permissionCard: LinearLayout
     private val overlayPermRow: LinearLayout
     private val overlayPermStatusText: TextView
 
     private val notificationPermRow: LinearLayout
     private val notificationPermStatusText: TextView
     private val notificationPermChevron: ImageView
+
+    private val actionButtonsContainer: LinearLayout
+    private val startButton: LinearLayout
+    private val stopButton: LinearLayout
+    private val runningStatusText: TextView
     
     private val tabPortrait: TextView
     private val tabLandscape: TextView
@@ -143,12 +149,13 @@ class MainScreen(
         appBar.addView(menuButton)
 
         // 2. Permissions Card (Horizontal split)
-        val permCard = createCard(context).apply {
+        permissionCard = createCard(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dpToPx(16), dpToPx(12), dpToPx(16), dpToPx(12))
+            visibility = View.GONE
         }
-        mainContainer.addView(permCard, createCardLayoutParams())
+        mainContainer.addView(permissionCard, createCardLayoutParams())
 
         // Left Column: Overlay Permission
         overlayPermRow = LinearLayout(context).apply {
@@ -159,7 +166,7 @@ class MainScreen(
             isFocusable = true
             setOnClickListener { onOverlayPermissionClicked() }
         }
-        permCard.addView(overlayPermRow)
+        permissionCard.addView(overlayPermRow)
 
         val overlayIcon = createCircularIcon(
             context,
@@ -196,7 +203,7 @@ class MainScreen(
             }
             setBackgroundColor(Color.rgb(230, 235, 240))
         }
-        permCard.addView(permDivider)
+        permissionCard.addView(permDivider)
 
         // Right Column: Notification Permission
         notificationPermRow = LinearLayout(context).apply {
@@ -209,7 +216,7 @@ class MainScreen(
             isFocusable = true
             setOnClickListener { onNotificationPermissionClicked() }
         }
-        permCard.addView(notificationPermRow)
+        permissionCard.addView(notificationPermRow)
 
         val notifyIcon = createCircularIcon(
             context,
@@ -247,7 +254,7 @@ class MainScreen(
         notificationPermRow.addView(notificationPermChevron)
 
         // 3. Action Buttons Section (开启遮挡 & 关闭)
-        val actionButtonsContainer = LinearLayout(context).apply {
+        actionButtonsContainer = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
         }
@@ -256,7 +263,7 @@ class MainScreen(
         })
 
         // 开启遮挡 (Weight 3)
-        val startButton = LinearLayout(context).apply {
+        startButton = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
             setBackground(GradientDrawable().apply {
@@ -264,9 +271,7 @@ class MainScreen(
                 cornerRadius = dpToPx(8).toFloat()
             })
             setPadding(0, dpToPx(14), 0, dpToPx(14))
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 3f).apply {
-                rightMargin = dpToPx(8)
-            }
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             isClickable = true
             isFocusable = true
             setOnClickListener { onStartClicked() }
@@ -288,8 +293,19 @@ class MainScreen(
             paint.isFakeBoldText = true
         })
 
-        // 关闭 (Weight 1)
-        val stopButton = LinearLayout(context).apply {
+        runningStatusText = TextView(context).apply {
+            text = "遮挡运行中"
+            textSize = 14f
+            setTextColor(Color.rgb(32, 142, 121))
+            paint.isFakeBoldText = true
+            gravity = Gravity.CENTER
+            visibility = View.GONE
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        actionButtonsContainer.addView(runningStatusText)
+
+        // 关闭 (only visible while running)
+        stopButton = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
             setBackground(GradientDrawable().apply {
@@ -298,6 +314,7 @@ class MainScreen(
             })
             setPadding(0, dpToPx(14), 0, dpToPx(14))
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            visibility = View.GONE
             isClickable = true
             isFocusable = true
             setOnClickListener { onStopClicked() }
@@ -1142,6 +1159,9 @@ class MainScreen(
     fun setPermissionStatus(hasOverlayPermission: Boolean, hasNotificationPermission: Boolean) {
         val activeGreen = Color.rgb(19, 115, 51)
         val inactiveOrange = Color.rgb(217, 119, 6)
+        val hasAllPermissions = hasOverlayPermission && hasNotificationPermission
+
+        permissionCard.visibility = if (hasAllPermissions) View.GONE else View.VISIBLE
 
         // Overlay status
         if (hasOverlayPermission) {
@@ -1162,6 +1182,25 @@ class MainScreen(
             notificationPermStatusText.setTextColor(inactiveOrange)
             notificationPermChevron.visibility = View.VISIBLE
         }
+    }
+
+    fun setOverlayRunning(isRunning: Boolean) {
+        if (isRunning) {
+            startButton.visibility = View.GONE
+            runningStatusText.visibility = View.VISIBLE
+            stopButton.visibility = View.VISIBLE
+            (runningStatusText.layoutParams as LinearLayout.LayoutParams).apply {
+                rightMargin = dpToPx(8)
+            }
+        } else {
+            startButton.visibility = View.VISIBLE
+            runningStatusText.visibility = View.GONE
+            stopButton.visibility = View.GONE
+            (startButton.layoutParams as LinearLayout.LayoutParams).apply {
+                rightMargin = 0
+            }
+        }
+        actionButtonsContainer.requestLayout()
     }
 
     // Helper functions

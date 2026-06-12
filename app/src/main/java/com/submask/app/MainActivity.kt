@@ -16,6 +16,7 @@ import com.submask.app.orientation.ScreenBounds
 class MainActivity : Activity() {
     private lateinit var configStore: OverlayConfigStore
     private lateinit var mainScreen: MainScreen
+    private var pendingStartAfterNotificationPermission = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,6 +42,7 @@ class MainActivity : Activity() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                     checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
                 ) {
+                    pendingStartAfterNotificationPermission = false
                     requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATIONS)
                 }
             },
@@ -49,6 +51,7 @@ class MainActivity : Activity() {
             },
             onStopClicked = {
                 stopService(OverlayService.stopIntent(this))
+                mainScreen.setOverlayRunning(false)
             }
         )
         setContentView(mainScreen)
@@ -56,6 +59,10 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        refreshHomeState()
+    }
+
+    private fun refreshHomeState() {
         val hasOverlay = Settings.canDrawOverlays(this)
         val hasNotification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
@@ -63,6 +70,7 @@ class MainActivity : Activity() {
             true
         }
         mainScreen.setPermissionStatus(hasOverlay, hasNotification)
+        mainScreen.setOverlayRunning(OverlayService.isRunning)
     }
 
     private fun startBlockingOrRequestPermission() {
@@ -78,11 +86,13 @@ class MainActivity : Activity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) {
+            pendingStartAfterNotificationPermission = true
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATIONS)
             return
         }
 
         startForegroundService(OverlayService.startIntent(this))
+        mainScreen.setOverlayRunning(true)
     }
 
     override fun onRequestPermissionsResult(
@@ -92,8 +102,13 @@ class MainActivity : Activity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_NOTIFICATIONS) {
-            if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
+            val shouldStart = pendingStartAfterNotificationPermission &&
+                grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
+            pendingStartAfterNotificationPermission = false
+            refreshHomeState()
+            if (shouldStart) {
                 startForegroundService(OverlayService.startIntent(this))
+                mainScreen.setOverlayRunning(true)
             }
         }
     }
