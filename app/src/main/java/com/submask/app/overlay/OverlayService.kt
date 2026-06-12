@@ -129,6 +129,7 @@ class OverlayService : Service(), SharedPreferences.OnSharedPreferenceChangeList
             context = this,
             initialRect = config.rect,
             initialLocked = config.locked,
+            initialOpacity = configStore.getOpacity(),
             onRectChanged = { rect ->
                 val clamped = rect.clampTo(
                     bounds = currentScreenBounds(),
@@ -144,12 +145,13 @@ class OverlayService : Service(), SharedPreferences.OnSharedPreferenceChangeList
                 currentLocked = locked
                 saveCurrentConfig()
             },
+            onOpacityChanged = { opacity ->
+                configStore.setOpacity(opacity)
+            },
             onCloseRequested = {
                 stopSelf()
             }
-        ).apply {
-            setMaskOpacity(configStore.getOpacity())
-        }
+        )
 
         overlayView = view
         windowController.show(view, config.rect)

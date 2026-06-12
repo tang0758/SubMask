@@ -1,11 +1,14 @@
 package com.submask.app.ui
 
 import android.app.AlertDialog
+import android.app.Dialog
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
+import android.view.Window
+import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -468,6 +471,13 @@ class MainScreen(
         }
         previewCard.addView(previewContainer)
 
+        // 7. Quick Layout Card
+        val quickLayoutCard = createCard(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
+        }
+        mainContainer.addView(quickLayoutCard, createCardLayoutParams())
+
         // 7. Direct Sliders Control Panel Card
         val controlCard = createCard(context).apply {
             orientation = LinearLayout.VERTICAL
@@ -631,16 +641,7 @@ class MainScreen(
         }
         xRow.addView(xAlignDropdownText, LinearLayout.LayoutParams(dpToPx(80), LinearLayout.LayoutParams.WRAP_CONTENT))
 
-        // Divider line
-        controlCard.addView(View(context).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dpToPx(1)).apply {
-                topMargin = dpToPx(12)
-                bottomMargin = dpToPx(12)
-            }
-            setBackgroundColor(Color.rgb(241, 243, 244))
-        })
-
-        controlCard.addView(TextView(context).apply {
+        quickLayoutCard.addView(TextView(context).apply {
             text = "快捷布局"
             textSize = 14f
             setTextColor(Color.rgb(32, 33, 36))
@@ -652,7 +653,7 @@ class MainScreen(
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
         }
-        controlCard.addView(chipsLayout, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+        quickLayoutCard.addView(chipsLayout, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
             bottomMargin = dpToPx(8)
         })
 
@@ -728,34 +729,18 @@ class MainScreen(
         badgeLandscape = createCheckmarkBadge(context)
         flLandscape.addView(badgeLandscape)
 
-        // Helper label at the bottom of the card
-        controlCard.addView(TextView(context).apply {
-            text = "拖拽预览中的遮挡区域或手柄可调整大小和位置"
-            textSize = 11f
-            setTextColor(Color.rgb(150, 155, 160))
-            gravity = Gravity.CENTER_HORIZONTAL
-        })
-
         // Initial tab load
         selectOrientation(ScreenOrientation.PORTRAIT)
     }
 
     private fun showOverflowMenu(anchor: View) {
         val popup = PopupMenu(context, anchor)
-        popup.menu.add("设置")
         popup.menu.add("使用帮助")
         popup.menu.add("关于")
         popup.setOnMenuItemClickListener { item ->
             when (item.title) {
-                "设置" -> {
-                    Toast.makeText(context, "设置功能将在后续版本中支持", Toast.LENGTH_SHORT).show()
-                }
                 "使用帮助" -> {
-                    AlertDialog.Builder(context)
-                        .setTitle("使用帮助")
-                        .setMessage("1. 首次使用需要开启“悬浮窗权限”及“通知权限”。\n2. 点击“开始遮挡”后，屏幕将浮现遮挡条。\n3. 您可以直接在预览框中拖动遮挡区或手柄来调整它的大小与位置，也可以在下方使用滑条和加减按钮精调。\n4. 点击右上角“重置”即可复原当前的配置。\n5. 点击遮挡条左上角的关闭按钮或点击通知栏“关闭遮挡”即可退出。")
-                        .setPositiveButton("确定", null)
-                        .show()
+                    showHelpDialog()
                 }
                 "关于" -> {
                     AlertDialog.Builder(context)
@@ -768,6 +753,105 @@ class MainScreen(
             true
         }
         popup.show()
+    }
+
+    private fun showHelpDialog() {
+        val dialog = Dialog(context)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+
+        val container = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dpToPx(24), dpToPx(20), dpToPx(24), dpToPx(24))
+            background = GradientDrawable().apply {
+                setColor(Color.WHITE)
+                cornerRadii = floatArrayOf(
+                    dpToPx(12).toFloat(), dpToPx(12).toFloat(),
+                    dpToPx(12).toFloat(), dpToPx(12).toFloat(),
+                    0f, 0f,
+                    0f, 0f
+                )
+            }
+        }
+
+        val titleRow = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        titleRow.addView(TextView(context).apply {
+            text = "使用帮助"
+            textSize = 20f
+            setTextColor(Color.rgb(32, 33, 36))
+            paint.isFakeBoldText = true
+        }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        titleRow.addView(TextView(context).apply {
+            text = "×"
+            textSize = 24f
+            gravity = Gravity.CENTER
+            setTextColor(Color.rgb(95, 99, 104))
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { dialog.dismiss() }
+        }, LinearLayout.LayoutParams(dpToPx(48), dpToPx(48)))
+        container.addView(titleRow)
+
+        val scrollContent = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            addHelpSectionTitle("快速开始")
+            HelpContent.quickStartSteps.forEach { addHelpBodyText(it) }
+            addHelpSectionTitle("常见问题")
+            HelpContent.faqItems.forEach { item ->
+                addHelpQuestionText(item.question)
+                addHelpBodyText(item.answer)
+            }
+        }
+        container.addView(ScrollView(context).apply {
+            isVerticalScrollBarEnabled = false
+            addView(scrollContent)
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ))
+
+        dialog.setContentView(container)
+        dialog.show()
+        dialog.window?.apply {
+            setBackgroundDrawableResource(android.R.color.transparent)
+            setGravity(Gravity.BOTTOM)
+            setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
+        }
+    }
+
+    private fun LinearLayout.addHelpSectionTitle(textValue: String) {
+        addView(TextView(context).apply {
+            text = textValue
+            textSize = 16f
+            setTextColor(Color.rgb(32, 33, 36))
+            paint.isFakeBoldText = true
+        }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+            topMargin = dpToPx(20)
+        })
+    }
+
+    private fun LinearLayout.addHelpQuestionText(textValue: String) {
+        addView(TextView(context).apply {
+            text = textValue
+            textSize = 14f
+            setTextColor(Color.rgb(32, 33, 36))
+            paint.isFakeBoldText = true
+        }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+            topMargin = dpToPx(14)
+        })
+    }
+
+    private fun LinearLayout.addHelpBodyText(textValue: String) {
+        addView(TextView(context).apply {
+            text = textValue
+            textSize = 14f
+            setTextColor(Color.rgb(95, 99, 104))
+            setLineSpacing(0f, 1.12f)
+        }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+            topMargin = dpToPx(8)
+        })
     }
 
     private fun selectOrientation(orientation: ScreenOrientation) {

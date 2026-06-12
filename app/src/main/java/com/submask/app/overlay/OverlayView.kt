@@ -12,6 +12,8 @@ import android.view.Gravity
 import android.view.MotionEvent
 import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.SeekBar
 import android.widget.TextView
 import com.submask.app.config.MaskRect
 
@@ -19,23 +21,28 @@ class OverlayView(
     context: Context,
     initialRect: MaskRect,
     initialLocked: Boolean,
+    initialOpacity: Float,
     private val onRectChanged: (MaskRect) -> Unit,
     private val onLockChanged: (Boolean) -> Unit,
+    private val onOpacityChanged: (Float) -> Unit,
     private val onCloseRequested: () -> Unit
 ) : FrameLayout(context) {
     private val lockButton: ImageView
     private val closeButton: ImageView
+    private val opacityButton: TextView
+    private val opacityPanel: LinearLayout
+    private val opacityValueText: TextView
+    private val opacitySeekBar: SeekBar
     private val resizeHandle: TextView
     private var rect = initialRect
     private var locked = initialLocked
+    private var opacityPercent = OverlayOpacityControl.percentFromOpacity(initialOpacity)
     private var dragStartX = 0f
     private var dragStartY = 0f
     private var startRect = initialRect
     private var mode = TouchMode.NONE
 
     init {
-        setMaskOpacity(0.72f)
-
         lockButton = ImageView(context).apply {
             scaleType = ImageView.ScaleType.FIT_CENTER
             setBackgroundColor(Color.argb(90, 255, 255, 255))
@@ -55,6 +62,55 @@ class OverlayView(
         }
         addView(closeButton, LayoutParams(56, 56, Gravity.START or Gravity.TOP))
 
+        opacityButton = TextView(context).apply {
+            textSize = 12f
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+            setBackgroundColor(Color.argb(110, 255, 255, 255))
+            setOnClickListener {
+                opacityPanel.visibility = if (opacityPanel.visibility == VISIBLE) GONE else VISIBLE
+            }
+        }
+        addView(opacityButton, LayoutParams(96, 56, Gravity.CENTER_HORIZONTAL or Gravity.TOP))
+
+        opacityValueText = TextView(context).apply {
+            textSize = 12f
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+        }
+
+        opacitySeekBar = SeekBar(context).apply {
+            max = OverlayOpacityControl.MAX_PERCENT - OverlayOpacityControl.MIN_PERCENT
+            progress = opacityPercent - OverlayOpacityControl.MIN_PERCENT
+            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                    if (!fromUser) return
+                    val percent = OverlayOpacityControl.MIN_PERCENT + progress
+                    val opacity = OverlayOpacityControl.opacityFromPercent(percent)
+                    setMaskOpacity(opacity)
+                    onOpacityChanged(opacity)
+                }
+
+                override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+
+                override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+            })
+        }
+
+        opacityPanel = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(16, 0, 16, 0)
+            setBackgroundColor(Color.argb(130, 255, 255, 255))
+            visibility = GONE
+            addView(opacityValueText, LinearLayout.LayoutParams(64, LinearLayout.LayoutParams.MATCH_PARENT))
+            addView(opacitySeekBar, LinearLayout.LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
+        }
+        addView(opacityPanel, LayoutParams(LayoutParams.MATCH_PARENT, 56, Gravity.BOTTOM).apply {
+            leftMargin = 64
+            rightMargin = 64
+        })
+
         resizeHandle = TextView(context).apply {
             text = "↘"
             textSize = 16f
@@ -64,6 +120,7 @@ class OverlayView(
         }
         addView(resizeHandle, LayoutParams(56, 56, Gravity.END or Gravity.BOTTOM))
 
+        setMaskOpacity(initialOpacity)
         setLocked(initialLocked, notifyChange = false)
     }
 
@@ -107,7 +164,11 @@ class OverlayView(
     }
 
     fun setMaskOpacity(opacity: Float) {
-        val alpha = (opacity.coerceIn(0.20f, 1.00f) * 255).toInt()
+        opacityPercent = OverlayOpacityControl.percentFromOpacity(opacity)
+        opacityButton.text = "$opacityPercent%"
+        opacityValueText.text = "$opacityPercent%"
+        opacitySeekBar.progress = opacityPercent - OverlayOpacityControl.MIN_PERCENT
+        val alpha = (OverlayOpacityControl.opacityFromPercent(opacityPercent) * 255).toInt()
         setBackgroundColor(Color.argb(alpha, 0, 0, 0))
     }
 
@@ -119,6 +180,10 @@ class OverlayView(
         locked = newLocked
         lockButton.setImageDrawable(LockDrawable(locked))
         closeButton.visibility = if (locked) GONE else VISIBLE
+        opacityButton.visibility = if (locked) GONE else VISIBLE
+        if (locked) {
+            opacityPanel.visibility = GONE
+        }
         resizeHandle.visibility = if (locked) GONE else VISIBLE
         if (notifyChange) {
             onLockChanged(locked)

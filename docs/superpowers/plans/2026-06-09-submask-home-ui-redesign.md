@@ -16,6 +16,11 @@ Reference concept:
 - Keep the primary action `开始遮挡`; permission handling continues to use the existing authorization flow.
 - Keep shared opacity as a slider with a visible percentage label, for example `遮挡透明度 72%`.
 - Add a `竖屏 / 横屏` segmented control. Each orientation reads and writes its own `OrientationConfig`.
+- Add three quick layout buttons directly below the preview and above the manual sliders:
+  - `TikTok 全屏`: portrait, bottom full-screen short-video subtitle placement.
+  - `YouTube 半屏`: portrait, upper-half video subtitle placement.
+  - `横屏全屏`: landscape, near-bottom full-screen subtitle placement.
+- Selecting a quick layout updates the selected orientation, preview, and all manual slider values immediately.
 - Add direct controls for the selected orientation:
   - `宽度`
   - `高度`
@@ -30,6 +35,8 @@ Reference concept:
 - Reuse `OverlayConfigStore`, `MaskRect`, and `OrientationConfig` for persistence so `OverlayService` reads the same values after startup.
 - Add a small pure Kotlin adjustment model if needed to map UI controls into a clamped `MaskRect`.
 - Use simulated portrait and landscape bounds for the preview and controls; the preview does not need to start or inspect the overlay window.
+- Render quick layout buttons before the manual adjustment rows so users choose a scenario first, then fine-tune with sliders.
+- Treat manual slider changes after applying a quick layout as custom values; the implementation can clear the selected quick-layout highlight.
 - Save config changes immediately when sliders change so orientation settings survive app restarts.
 - Do not change existing overlay drag, resize, lock, close, notification stop, or Quick Settings Tile behavior.
 
@@ -43,6 +50,8 @@ Reference concept:
   - Permission status refreshes after returning from system settings.
   - Opacity changes persist and affect the overlay after `开始遮挡`.
   - Portrait and landscape controls save independent rectangles.
+  - Selecting each quick layout updates orientation, preview, and slider values in the expected order.
+  - Quick layout buttons appear above the manual slider controls.
   - Rotating the device uses the corresponding orientation rectangle.
   - Reset restores only the currently selected orientation.
   - Overflow menu opens and does not occupy permanent screen space.
