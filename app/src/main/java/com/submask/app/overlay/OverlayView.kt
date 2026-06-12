@@ -41,8 +41,12 @@ class OverlayView(
     private var dragStartY = 0f
     private var startRect = initialRect
     private var mode = TouchMode.NONE
+    private val controlSize = CONTROL_SIZE_PX
 
     init {
+        clipChildren = false
+        clipToPadding = false
+
         lockButton = ImageView(context).apply {
             scaleType = ImageView.ScaleType.FIT_CENTER
             setBackgroundColor(Color.argb(90, 255, 255, 255))
@@ -50,7 +54,7 @@ class OverlayView(
                 setLocked(!locked)
             }
         }
-        addView(lockButton, LayoutParams(56, 56, Gravity.END or Gravity.TOP))
+        addView(lockButton, LayoutParams(controlSize, controlSize, Gravity.END or Gravity.TOP))
 
         closeButton = ImageView(context).apply {
             scaleType = ImageView.ScaleType.FIT_CENTER
@@ -60,18 +64,19 @@ class OverlayView(
                 onCloseRequested()
             }
         }
-        addView(closeButton, LayoutParams(56, 56, Gravity.START or Gravity.TOP))
+        addView(closeButton, LayoutParams(controlSize, controlSize, Gravity.START or Gravity.TOP))
 
         opacityButton = TextView(context).apply {
-            textSize = 12f
+            textSize = 11f
             setTextColor(Color.WHITE)
             gravity = Gravity.CENTER
+            includeFontPadding = false
             setBackgroundColor(Color.argb(110, 255, 255, 255))
             setOnClickListener {
                 opacityPanel.visibility = if (opacityPanel.visibility == VISIBLE) GONE else VISIBLE
             }
         }
-        addView(opacityButton, LayoutParams(96, 56, Gravity.CENTER_HORIZONTAL or Gravity.TOP))
+        addView(opacityButton, LayoutParams(controlSize, controlSize, Gravity.START or Gravity.BOTTOM))
 
         opacityValueText = TextView(context).apply {
             textSize = 12f
@@ -103,12 +108,11 @@ class OverlayView(
             setPadding(16, 0, 16, 0)
             setBackgroundColor(Color.argb(130, 255, 255, 255))
             visibility = GONE
-            addView(opacityValueText, LinearLayout.LayoutParams(64, LinearLayout.LayoutParams.MATCH_PARENT))
+            addView(opacityValueText, LinearLayout.LayoutParams(OPACITY_VALUE_WIDTH_PX, LinearLayout.LayoutParams.MATCH_PARENT))
             addView(opacitySeekBar, LinearLayout.LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
         }
-        addView(opacityPanel, LayoutParams(LayoutParams.MATCH_PARENT, 56, Gravity.BOTTOM).apply {
-            leftMargin = 64
-            rightMargin = 64
+        addView(opacityPanel, LayoutParams(OPACITY_PANEL_WIDTH_PX, controlSize, Gravity.START or Gravity.BOTTOM).apply {
+            bottomMargin = controlSize
         })
 
         resizeHandle = TextView(context).apply {
@@ -118,10 +122,15 @@ class OverlayView(
             gravity = Gravity.CENTER
             setBackgroundColor(Color.argb(90, 255, 255, 255))
         }
-        addView(resizeHandle, LayoutParams(56, 56, Gravity.END or Gravity.BOTTOM))
+        addView(resizeHandle, LayoutParams(controlSize, controlSize, Gravity.END or Gravity.BOTTOM))
 
         setMaskOpacity(initialOpacity)
         setLocked(initialLocked, notifyChange = false)
+    }
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        updateControlLayoutForHeight(h)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -132,7 +141,7 @@ class OverlayView(
                 dragStartX = event.rawX
                 dragStartY = event.rawY
                 startRect = rect
-                mode = if (event.x > width - 96 && event.y > height - 96) {
+                mode = if (event.x > width - controlSize && event.y > height - controlSize) {
                     TouchMode.RESIZE
                 } else {
                     TouchMode.DRAG
@@ -188,6 +197,25 @@ class OverlayView(
         if (notifyChange) {
             onLockChanged(locked)
         }
+    }
+
+    private fun updateControlLayoutForHeight(height: Int) {
+        val compact = height < controlSize * 2
+        val bottomOffset = if (compact) height - controlSize * 2 else 0
+        listOf(opacityButton, resizeHandle).forEach { view ->
+            val params = view.layoutParams as LayoutParams
+            params.bottomMargin = bottomOffset
+            view.layoutParams = params
+        }
+        val panelParams = opacityPanel.layoutParams as LayoutParams
+        panelParams.bottomMargin = controlSize + bottomOffset
+        opacityPanel.layoutParams = panelParams
+    }
+
+    companion object {
+        private const val CONTROL_SIZE_PX = 56
+        private const val OPACITY_PANEL_WIDTH_PX = 220
+        private const val OPACITY_VALUE_WIDTH_PX = 64
     }
 
     private enum class TouchMode {
