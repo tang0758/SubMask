@@ -111,8 +111,9 @@ class OverlayView(
             addView(opacityValueText, LinearLayout.LayoutParams(OPACITY_VALUE_WIDTH_PX, LinearLayout.LayoutParams.MATCH_PARENT))
             addView(opacitySeekBar, LinearLayout.LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
         }
-        addView(opacityPanel, LayoutParams(OPACITY_PANEL_WIDTH_PX, controlSize, Gravity.START or Gravity.BOTTOM).apply {
-            bottomMargin = controlSize
+        addView(opacityPanel, LayoutParams(LayoutParams.MATCH_PARENT, controlSize, Gravity.BOTTOM).apply {
+            leftMargin = controlSize
+            rightMargin = controlSize
         })
 
         resizeHandle = TextView(context).apply {
@@ -208,7 +209,7 @@ class OverlayView(
             view.layoutParams = params
         }
         val panelParams = opacityPanel.layoutParams as LayoutParams
-        panelParams.bottomMargin = controlSize + bottomOffset
+        panelParams.bottomMargin = bottomOffset
         opacityPanel.layoutParams = panelParams
     }
 

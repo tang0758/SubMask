@@ -118,7 +118,7 @@ class OverlayConfigStore(context: Context) {
     )
 
     companion object {
-        const val MIN_MASK_WIDTH = 80
-        const val MIN_MASK_HEIGHT = 48
+        const val MIN_MASK_WIDTH = 112
+        const val MIN_MASK_HEIGHT = 112
     }
 }
