@@ -595,6 +595,10 @@ input[type="range"] {
   padding: 20px 22px;
 }
 
+.permission-card.is-hidden {
+  display: none;
+}
+
 .permission-item {
   display: flex;
   align-items: center;
@@ -644,6 +648,14 @@ input[type="range"] {
   grid-template-columns: 1fr 132px;
   gap: 14px;
   margin-bottom: 14px;
+}
+
+.action-row.is-idle {
+  grid-template-columns: 1fr;
+}
+
+.stop-action[hidden] {
+  display: none;
 }
 
 .start-action,

@@ -40,7 +40,7 @@
               <button type="button">关于</button>
             </div>
 
-            <section class="permission-card">
+            <section class="permission-card is-hidden">
               <div class="permission-item">
                 <span class="permission-icon eye-icon">◉</span>
                 <div>
@@ -58,9 +58,9 @@
               </div>
             </section>
 
-            <section class="action-row">
+            <section class="action-row is-idle">
               <button class="start-action" type="button" data-action="start">▶ 开启遮挡</button>
-              <button class="stop-action" type="button">关闭</button>
+              <button class="stop-action" type="button" hidden>关闭</button>
             </section>
 
             <section class="opacity-card">
@@ -181,7 +181,8 @@
         <aside class="notes-panel">
           <h2>原型覆盖范围</h2>
           <ul>
-            <li>首页权限状态、预览、快捷布局和滑块调节。</li>
+            <li>权限正常时隐藏权限卡，权限缺失时作为阻断任务展示。</li>
+            <li>首页预览、快捷布局和滑块调节。</li>
             <li>右上菜单仅保留“使用帮助 / 关于”。</li>
             <li>悬浮窗解锁、锁定和运行中透明度调节。</li>
             <li>Quick Settings Tile active / inactive 状态。</li>
